@@ -1,6 +1,7 @@
 package fr.sqq.achatgroupe.application.handler.command;
 
 import fr.sqq.achatgroupe.application.command.CreateOrderCommand;
+import fr.sqq.achatgroupe.application.notification.OrderConfirmation;
 import fr.sqq.achatgroupe.application.port.out.OrderRepository;
 import fr.sqq.achatgroupe.application.port.out.ProductRepository;
 import fr.sqq.achatgroupe.application.port.out.TimeSlotRepository;
@@ -21,6 +22,7 @@ import fr.sqq.achatgroupe.domain.model.vente.VenteId;
 import fr.sqq.mediator.CommandHandler;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.transaction.Transactional;
 
 import java.util.ArrayList;
@@ -34,13 +36,16 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCommand, Or
     private final ProductRepository productRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final VenteRepository venteRepository;
+    private final Event<OrderConfirmation> orderConfirmed;
 
     public CreateOrderHandler(OrderRepository orderRepository, ProductRepository productRepository,
-                              TimeSlotRepository timeSlotRepository, VenteRepository venteRepository) {
+                              TimeSlotRepository timeSlotRepository, VenteRepository venteRepository,
+                              Event<OrderConfirmation> orderConfirmed) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.timeSlotRepository = timeSlotRepository;
         this.venteRepository = venteRepository;
+        this.orderConfirmed = orderConfirmed;
     }
 
     @Override
@@ -71,6 +76,7 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCommand, Or
         }
 
         List<OrderItem> orderItems = new ArrayList<>();
+        List<OrderConfirmation.Line> confirmationLines = new ArrayList<>();
         for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
             Product product = productRepository.findByVariantId(itemCmd.variantId())
                     .orElseThrow(() -> new VariantNotFoundException(itemCmd.variantId()));
@@ -83,7 +89,10 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCommand, Or
             variant.decrementStock(itemCmd.quantity(), product.displayName(variant));
             productRepository.save(product);
 
-            orderItems.add(OrderItem.create(product.id(), variant.id(), itemCmd.quantity(), product.prixTtc(variant)));
+            OrderItem item = OrderItem.create(product.id(), variant.id(), itemCmd.quantity(), product.prixTtc(variant));
+            orderItems.add(item);
+            confirmationLines.add(new OrderConfirmation.Line(product.displayName(variant), item.quantity(),
+                    item.unitPrice().amount(), item.subtotal().amount()));
         }
 
         if (timeSlot != null) {
@@ -96,6 +105,29 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCommand, Or
                 ? Order.create(command.venteId(), orderNumber, customer, command.timeSlotId(), orderItems, command.idempotencyKey())
                 : Order.createWithoutTimeSlot(command.venteId(), orderNumber, customer, orderItems, command.idempotencyKey());
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        // Observé après commit uniquement : pas d'email si la transaction échoue.
+        orderConfirmed.fire(toConfirmation(saved, vente, timeSlot, confirmationLines));
+        return saved;
+    }
+
+    private static OrderConfirmation toConfirmation(Order order, Vente vente, TimeSlot timeSlot,
+                                                    List<OrderConfirmation.Line> lines) {
+        CustomerInfo customer = order.customer();
+        OrderConfirmation.TimeSlot slot = timeSlot != null
+                ? new OrderConfirmation.TimeSlot(timeSlot.date(), timeSlot.startTime(), timeSlot.endTime())
+                : null;
+        return new OrderConfirmation(
+                order.id(),
+                order.orderNumber().value(),
+                customer.firstName(),
+                customer.lastName(),
+                customer.email(),
+                vente.name(),
+                slot,
+                vente.pickupStartDate(),
+                vente.pickupEndDate(),
+                lines,
+                order.totalAmount().amount());
     }
 }

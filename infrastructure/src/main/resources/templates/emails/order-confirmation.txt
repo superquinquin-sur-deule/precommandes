@@ -1,0 +1,18 @@
+{@fr.sqq.achatgroupe.infrastructure.out.email.OrderConfirmationEmail email}
+Merci pour ta commande, {email.customerFirstName} !
+
+Commande {email.orderNumber} · {email.venteName}
+
+Ta commande :
+{#for line in email.lines}
+- {line.productName} × {line.quantity} ({line.unitPrice} l'unité) : {line.subtotal}
+{/for}
+
+Total : {email.total}
+{#if email.pickupLabel}
+
+{email.pickupLabel}
+{email.pickupInstructions}
+{/if}
+
+Le règlement se fait en magasin, au moment du retrait.

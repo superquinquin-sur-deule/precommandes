@@ -11,7 +11,7 @@ A group purchasing platform for cooperatives. Organize collective purchasing eve
 - Shopping cart with quantity management
 - Multi-step checkout (customer info, time slot selection, order review)
 - Payment in store at pickup — no online payment
-- Order confirmation and tracking
+- Order confirmation (on screen and by email via Brevo) and tracking
 
 ### For administrators
 
@@ -53,6 +53,10 @@ User-configurable environment variables:
 | `QUARKUS_DATASOURCE_JDBC_URL` | PostgreSQL JDBC URL | Auto-configured in dev |
 | `QUARKUS_DATASOURCE_USERNAME` | Database username | Auto-configured in dev |
 | `QUARKUS_DATASOURCE_PASSWORD` | Database password | Auto-configured in dev |
+| `APP_EMAIL_ENABLED` | Send order confirmation emails through Brevo (otherwise they are only logged) | `false` |
+| `APP_EMAIL_BREVO_API_KEY` | Brevo API key (required when emails are enabled) | — |
+| `APP_EMAIL_SENDER_EMAIL` | Sender address, must be a validated sender in Brevo (required when emails are enabled) | — |
+| `APP_EMAIL_SENDER_NAME` | Sender display name | `Achat Groupé` |
 
 ## Testing
 

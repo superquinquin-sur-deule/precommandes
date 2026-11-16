@@ -1,0 +1,68 @@
+{@fr.sqq.achatgroupe.infrastructure.out.email.OrderConfirmationEmail email}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmation de ta commande {email.orderNumber}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f3f3;font-family:Arial,Helvetica,sans-serif;color:#1d2327;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f3f3;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;">
+          <tr>
+            <td style="padding:32px 32px 8px 32px;">
+              <h1 style="margin:0;font-size:22px;line-height:1.3;color:#1d2327;">Merci pour ta commande, {email.customerFirstName} !</h1>
+              <p style="margin:8px 0 0 0;font-size:14px;color:#453630;">Commande <strong>{email.orderNumber}</strong> · {email.venteName}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 32px 0 32px;">
+              <h2 style="margin:0 0 12px 0;font-size:16px;color:#1d2327;">Ta commande</h2>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse;">
+                <tr>
+                  <th align="left" style="padding:8px 0;border-bottom:1px solid #e5e5e5;color:#453630;font-weight:normal;">Produit</th>
+                  <th align="center" style="padding:8px 0;border-bottom:1px solid #e5e5e5;color:#453630;font-weight:normal;">Qté</th>
+                  <th align="right" style="padding:8px 0;border-bottom:1px solid #e5e5e5;color:#453630;font-weight:normal;">Prix unitaire</th>
+                  <th align="right" style="padding:8px 0;border-bottom:1px solid #e5e5e5;color:#453630;font-weight:normal;">Total</th>
+                </tr>
+                {#for line in email.lines}
+                <tr>
+                  <td align="left" style="padding:8px 8px 8px 0;border-bottom:1px solid #f0f0f0;">{line.productName}</td>
+                  <td align="center" style="padding:8px;border-bottom:1px solid #f0f0f0;">{line.quantity}</td>
+                  <td align="right" style="padding:8px 0;border-bottom:1px solid #f0f0f0;white-space:nowrap;">{line.unitPrice}</td>
+                  <td align="right" style="padding:8px 0 8px 8px;border-bottom:1px solid #f0f0f0;white-space:nowrap;">{line.subtotal}</td>
+                </tr>
+                {/for}
+                <tr>
+                  <td colspan="3" align="left" style="padding:12px 0 0 0;font-size:16px;font-weight:bold;">Total</td>
+                  <td align="right" style="padding:12px 0 0 0;font-size:16px;font-weight:bold;white-space:nowrap;">{email.total}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          {#if email.pickupLabel}
+          <tr>
+            <td style="padding:24px 32px 0 32px;">
+              <div style="background-color:#f1dc43;border-radius:12px;padding:16px 20px;">
+                <p style="margin:0;font-size:16px;font-weight:bold;color:#1d2327;">{email.pickupLabel}</p>
+                <p style="margin:6px 0 0 0;font-size:14px;color:#1d2327;">{email.pickupInstructions}</p>
+              </div>
+            </td>
+          </tr>
+          {/if}
+
+          <tr>
+            <td style="padding:24px 32px 32px 32px;">
+              <p style="margin:0;font-size:14px;color:#453630;">Le règlement se fait en magasin, au moment du retrait.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
